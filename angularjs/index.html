@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" ng-app="employeeDirectory">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An AngularJS employee directory based on the Executive Enterprise Directory reference app.">
+    <title>Executive Enterprise Directory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body ng-controller="DirectoryController">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Executive Enterprise Directory home"><span class="brand-mark">ED</span><span>Executive Enterprise Directory</span></a>
+      <div class="topbar-actions"><span class="topbar-caption">PEOPLE OPERATIONS</span><button class="button button-primary" type="button" ng-click="openNewEmployee()"><span aria-hidden="true">+</span> New employee</button></div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Directory filters">
+        <div class="sidebar-heading"><span class="eyebrow">WORKSPACE</span><h2>Directory</h2></div>
+        <div class="sidebar-section">
+          <h3>Departments <span class="count">{{ employees.length }}</span></h3>
+          <button class="nav-item" type="button" ng-class="{active: !filters.department}" ng-click="filters.department = ''"><span class="nav-dot all-dot"></span><span>All employees</span><span class="nav-count">{{ employees.length }}</span></button>
+          <button class="nav-item" type="button" ng-repeat="department in departments track by department" ng-class="{active: filters.department === department}" ng-click="filters.department = department"><span class="nav-dot" ng-class="'dot-' + $index"></span><span>{{ department }}</span><span class="nav-count">{{ (employees | filter:{department: department}).length }}</span></button>
+        </div>
+        <div class="sidebar-note"><span class="note-icon" aria-hidden="true">i</span><p>Directory data is managed by People Operations.</p></div>
+        <div class="sidebar-footer">INTERNAL DIRECTORY <span>·</span> 2026</div>
+      </aside>
+
+      <main class="main-content">
+        <div class="page-heading">
+          <div><p class="eyebrow">PEOPLE / DIRECTORY</p><h1>Employee directory</h1><p class="page-description">Find colleagues and explore the organization.</p></div>
+          <div class="updated-label"><span class="status-pulse"></span> Directory active</div>
+        </div>
+
+        <section class="summary-grid" aria-label="Directory summary">
+          <article class="summary-item"><span class="summary-label">TOTAL EMPLOYEES</span><strong>{{ employees.length | number }}</strong><span class="summary-foot">Across all departments</span></article>
+          <article class="summary-item"><span class="summary-label">ACTIVE</span><strong>{{ (employees | filter:{status: 'Active'}).length | number }}</strong><span class="summary-foot"><span class="mini-indicator"></span> Currently working</span></article>
+          <article class="summary-item"><span class="summary-label">DEPARTMENTS</span><strong>{{ departments.length | number }}</strong><span class="summary-foot">Business functions</span></article>
+          <article class="summary-item summary-accent"><span class="summary-label">LOCATIONS</span><strong>{{ locations.length | number }}</strong><span class="summary-foot">Worldwide offices</span></article>
+        </section>
+
+        <section class="directory-panel" aria-label="Employee results">
+          <div class="toolbar">
+            <label class="search-box"><span class="search-icon" aria-hidden="true"></span><input type="search" ng-model="searchText" placeholder="Search name, title, email or ID" aria-label="Search employees"><kbd>⌕</kbd></label>
+            <div class="toolbar-actions">
+              <label class="select-wrap"><span class="visually-hidden">Filter by location</span><select ng-model="filters.location" ng-options="location for location in locations"><option value="">All locations</option></select></label>
+              <label class="select-wrap"><span class="visually-hidden">Filter by status</span><select ng-model="filters.status" ng-options="status for status in statuses"><option value="">All statuses</option></select></label>
+              <div class="view-switch" role="group" aria-label="Choose directory layout"><button type="button" aria-label="Card view" title="Card view" ng-class="{selected: viewMode === 'cards'}" ng-click="viewMode = 'cards'">▦</button><button type="button" aria-label="Table view" title="Table view" ng-class="{selected: viewMode === 'table'}" ng-click="viewMode = 'table'">☷</button></div>
+              <button class="button button-secondary export-button" type="button" ng-click="exportCsv()"><span aria-hidden="true">↓</span> Export CSV</button>
+            </div>
+          </div>
+          <div class="results-bar">
+            <p><strong>{{ visibleEmployees.length || 0 }}</strong> people <span>matching your directory</span></p>
+            <label class="sort-control">Sort by <select ng-model="sortKey"><option value="name">Name</option><option value="department">Department</option><option value="title">Job title</option><option value="location">Location</option></select><button class="sort-direction" type="button" ng-click="sortDescending = !sortDescending" ng-attr-aria-label="Sort {{ sortDescending ? 'ascending' : 'descending' }}">{{ sortDescending ? '↓' : '↑' }}</button></label>
+          </div>
+
+          <div class="employee-grid" ng-if="viewMode === 'cards' && visibleEmployees.length">
+            <article class="employee-card" ng-repeat="employee in visibleEmployees track by employee.id" ng-click="openProfile(employee)" tabindex="0" ng-keypress="$event.which === 13 && openProfile(employee)">
+              <div class="card-topline"><div class="employee-identity"><div class="avatar" ng-class="'avatar-' + $index % 6">{{ initials(employee.name) }}</div><div class="identity-copy"><h2>{{ employee.name }}</h2><p>{{ employee.title }}</p></div></div><span class="status-badge" ng-class="'status-' + employee.status.toLowerCase().replace(' ', '-')">{{ employee.status }}</span></div>
+              <div class="card-details"><div><span class="detail-label">DEPARTMENT</span><span>{{ employee.department }}</span></div><div><span class="detail-label">LOCATION</span><span>{{ employee.location }}</span></div><div><span class="detail-label">MANAGER</span><span>{{ employee.managerName || 'Executive leadership' }}</span></div></div>
+              <div class="card-footer"><a class="employee-email" ng-href="mailto:{{ employee.email }}" ng-click="$event.stopPropagation()">{{ employee.email }}</a><span class="employee-id">{{ employee.id }}</span></div>
+            </article>
+          </div>
+          <div class="table-scroll" ng-if="viewMode === 'table' && visibleEmployees.length">
+            <table><thead><tr><th>EMPLOYEE</th><th>DEPARTMENT</th><th>LOCATION</th><th>MANAGER</th><th>STATUS</th><th>ID</th></tr></thead><tbody>
+              <tr ng-repeat="employee in visibleEmployees track by employee.id" ng-click="openProfile(employee)">
+                <td><div class="table-person"><span class="avatar avatar-small" ng-class="'avatar-' + $index % 6">{{ initials(employee.name) }}</span><span><strong>{{ employee.name }}</strong><small>{{ employee.title }}</small></span></div></td><td>{{ employee.department }}</td><td>{{ employee.location }}</td><td>{{ employee.managerName || 'Executive leadership' }}</td><td><span class="status-badge" ng-class="'status-' + employee.status.toLowerCase().replace(' ', '-')">{{ employee.status }}</span></td><td class="employee-id">{{ employee.id }}</td>
+              </tr>
+            </tbody></table>
+          </div>
+          <div class="empty-state" ng-if="!visibleEmployees.length"><span class="empty-mark">0</span><h2>No employees found</h2><p>Try a different search or clear the current filters.</p><button type="button" class="button button-secondary" ng-click="clearFilters()">Clear filters</button></div>
+        </section>
+        <footer class="page-footer">Showing {{ visibleEmployees.length || 0 }} of {{ employees.length }} employee records <span>·</span> Internal use only</footer>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" ng-if="isFormOpen" ng-click="closeForm()">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="form-title" ng-click="$event.stopPropagation()">
+        <div class="modal-heading"><div><p class="eyebrow">PEOPLE OPERATIONS</p><h2 id="form-title">Add employee</h2></div><button class="icon-button" type="button" aria-label="Close" ng-click="closeForm()">×</button></div>
+        <form ng-submit="addEmployee()"><div class="form-grid">
+          <label>Full name<input type="text" ng-model="newEmployee.name" required></label><label>Job title<input type="text" ng-model="newEmployee.title" required></label><label>Email<input type="email" ng-model="newEmployee.email" required></label>
+          <label>Department<select ng-model="newEmployee.department" ng-options="department for department in departments" required></select></label><label>Location<select ng-model="newEmployee.location" ng-options="location for location in locations" required></select></label><label>Employment type<select ng-model="newEmployee.employmentType"><option>Full-time</option><option>Contractor</option><option>Executive</option></select></label>
+        </div><div class="modal-actions"><button class="button button-secondary" type="button" ng-click="closeForm()">Cancel</button><button class="button button-primary" type="submit">Add to directory</button></div></form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" ng-if="selectedEmployee" ng-click="closeProfile()">
+      <section class="modal profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-name" ng-click="$event.stopPropagation()">
+        <div class="modal-heading"><p class="eyebrow">EMPLOYEE PROFILE</p><button class="icon-button" type="button" aria-label="Close" ng-click="closeProfile()">×</button></div>
+        <div class="profile-heading"><span class="avatar avatar-large">{{ initials(selectedEmployee.name) }}</span><div><h2 id="profile-name">{{ selectedEmployee.name }}</h2><p>{{ selectedEmployee.title }}</p></div></div>
+        <dl class="profile-details"><div><dt>Employee ID</dt><dd>{{ selectedEmployee.id }}</dd></div><div><dt>Department</dt><dd>{{ selectedEmployee.department }}</dd></div><div><dt>Team</dt><dd>{{ selectedEmployee.team }}</dd></div><div><dt>Location</dt><dd>{{ selectedEmployee.location }} · {{ selectedEmployee.timezone }}</dd></div><div><dt>Manager</dt><dd>{{ selectedEmployee.managerName || 'Executive leadership' }}</dd></div><div><dt>Hire date</dt><dd>{{ selectedEmployee.hireDate | date:'MMM d, yyyy' }}</dd></div><div><dt>Email</dt><dd><a ng-href="mailto:{{ selectedEmployee.email }}">{{ selectedEmployee.email }}</a></dd></div><div><dt>Status</dt><dd><span class="status-badge" ng-class="'status-' + selectedEmployee.status.toLowerCase().replace(' ', '-')">{{ selectedEmployee.status }}</span></dd></div></dl>
+      </section>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
