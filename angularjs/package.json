@@ -1,0 +1,18 @@
+{
+  "name": "angularjs",
+  "version": "1.0.0",
+  "description": "This standalone example converts the React reference directory into plain HTML, CSS, and AngularJS 1.x. It includes local sample data for eight employees and can load and add employee records through Supabase.",
+  "main": "app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "angular": "^1.8.3"
+  }
+}

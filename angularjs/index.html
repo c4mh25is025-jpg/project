@@ -13,7 +13,7 @@
   <body ng-controller="DirectoryController">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Executive Enterprise Directory home"><span class="brand-mark">ED</span><span>Executive Enterprise Directory</span></a>
-      <div class="topbar-actions"><span class="topbar-caption">PEOPLE OPERATIONS</span><button class="button button-primary" type="button" ng-click="openNewEmployee()"><span aria-hidden="true">+</span> New employee</button></div>
+      <div class="topbar-actions"><span class="topbar-caption">PEOPLE OPERATIONS</span><button class="button button-secondary" type="button" ng-if="isConfigured && isSupabaseReady && !currentUser" ng-click="openSignIn()">Sign in</button><span class="topbar-caption" ng-if="currentUser">{{ currentUser.email }}</span><button class="button button-secondary" type="button" ng-if="currentUser" ng-click="signOut()">Sign out</button><button class="button button-primary" type="button" ng-click="openNewEmployee()" ng-disabled="isConfigured && !currentUser"><span aria-hidden="true">+</span> New employee</button></div>
     </header>
 
     <div class="workspace">
@@ -30,7 +30,7 @@
 
       <main class="main-content">
         <div class="page-heading">
-          <div><p class="eyebrow">PEOPLE / DIRECTORY</p><h1>Employee directory</h1><p class="page-description">Find colleagues and explore the organization.</p></div>
+          <div><p class="eyebrow">PEOPLE / DIRECTORY</p><h1>Employee directory</h1><p class="page-description">Find colleagues and explore the organization.</p><p class="connection-status" ng-class="{error: connectionError}" role="status">{{ connectionMessage }}</p></div>
           <div class="updated-label"><span class="status-pulse"></span> Directory active</div>
         </div>
 
@@ -76,13 +76,20 @@
       </main>
     </div>
 
+    <div class="modal-backdrop" ng-if="isAuthOpen" ng-click="closeSignIn()">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="sign-in-title" ng-click="$event.stopPropagation()">
+        <div class="modal-heading"><div><p class="eyebrow">PEOPLE OPERATIONS</p><h2 id="sign-in-title">Sign in</h2></div><button class="icon-button" type="button" aria-label="Close" ng-click="closeSignIn()">×</button></div>
+        <form ng-submit="signIn()"><div class="form-grid"><label>Email<input type="email" ng-model="credentials.email" autocomplete="username" required></label><label>Password<input type="password" ng-model="credentials.password" autocomplete="current-password" required></label></div><p class="form-error" ng-if="errorMessage" role="alert">{{ errorMessage }}</p><div class="modal-actions"><button class="button button-secondary" type="button" ng-click="closeSignIn()">Cancel</button><button class="button button-primary" type="submit" ng-disabled="isSigningIn">{{ isSigningIn ? 'Signing in…' : 'Sign in' }}</button></div></form>
+      </section>
+    </div>
+
     <div class="modal-backdrop" ng-if="isFormOpen" ng-click="closeForm()">
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="form-title" ng-click="$event.stopPropagation()">
         <div class="modal-heading"><div><p class="eyebrow">PEOPLE OPERATIONS</p><h2 id="form-title">Add employee</h2></div><button class="icon-button" type="button" aria-label="Close" ng-click="closeForm()">×</button></div>
         <form ng-submit="addEmployee()"><div class="form-grid">
           <label>Full name<input type="text" ng-model="newEmployee.name" required></label><label>Job title<input type="text" ng-model="newEmployee.title" required></label><label>Email<input type="email" ng-model="newEmployee.email" required></label>
           <label>Department<select ng-model="newEmployee.department" ng-options="department for department in departments" required></select></label><label>Location<select ng-model="newEmployee.location" ng-options="location for location in locations" required></select></label><label>Employment type<select ng-model="newEmployee.employmentType"><option>Full-time</option><option>Contractor</option><option>Executive</option></select></label>
-        </div><div class="modal-actions"><button class="button button-secondary" type="button" ng-click="closeForm()">Cancel</button><button class="button button-primary" type="submit">Add to directory</button></div></form>
+        </div><p class="form-error" ng-if="errorMessage" role="alert">{{ errorMessage }}</p><div class="modal-actions"><button class="button button-secondary" type="button" ng-click="closeForm()">Cancel</button><button class="button button-primary" type="submit" ng-disabled="isSaving">{{ isSaving ? 'Saving…' : 'Add to directory' }}</button></div></form>
       </section>
     </div>
 
@@ -95,6 +102,8 @@
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1"></script>
+    <script src="supabase-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
